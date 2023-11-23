@@ -2,21 +2,27 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	"os"
+
+	"github.com/valyala/fasthttp"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	requestHandler := func(ctx *fasthttp.RequestCtx) {
+		// Serve the Flutter web app from the "./build/web" directory
+		path := string(ctx.Path())
+		if path == "/" {
+			path = "/index.html"
+		}
+		filePath := "./build/web" + path
+
+		// Serve the file
+		fasthttp.ServeFile(ctx, filePath)
 	}
 
-	http.Handle("/", http.FileServer(http.Dir("./build/web")))
-
-	fmt.Println("Starting server on port:", port)
-	err := http.ListenAndServe(":"+port, nil)
-	if err != nil {
-		fmt.Println("Error starting server:", err)
+	// Start the fasthttp server
+	addr := ":8080"
+	fmt.Printf("Server is running on %s...\n", addr)
+	if err := fasthttp.ListenAndServe(addr, requestHandler); err != nil {
+		fmt.Printf("Error: %s\n", err)
 	}
 }
